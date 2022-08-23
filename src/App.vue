@@ -11,37 +11,23 @@ import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 import url from "@/assets/untitled1.gltf?url";
 const container = ref(null);
 onMounted(() => {
-  let scene,
-    camera,
-    renderer,
-    clock,
-    controls,
+  let scene = initScene(), // 场景
+    // camera = initCamera(scene), // 相机
+    camera, // 相机
+    renderer = initRenderer(), // 渲染器
+    clock = initClock(), // 时钟
+    controls, // 相机控制器
     mixer,
-    gltf,
     actions = [];
 
-  // 渲染器
-  initRenderer();
-  // 场景
-  initScene();
-  // 相机
-  initCamera();
   // 灯光
-  initLight();
-  // 时钟
-  initClock();
-  // 坐标轴
-  initAxes();
-  // 相机控制器
-  initControls();
+  initLight(scene);
   // 模型
-  initModel();
-  // 屏幕变化
-  initResize();
-  // 事件
-  initEvent();
+  initModel(scene);
+  // 坐标轴
+  initAxes(scene);
 
-  function initResize() {
+  function initResize(camera, renderer) {
     window.addEventListener("resize", function () {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
@@ -50,102 +36,114 @@ onMounted(() => {
   }
 
   function initRenderer() {
-    renderer = new THREE.WebGLRenderer();
+    const renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.shadowMap.enabled = true;
+    renderer.shadowMapSoft = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.gammaOuput = true;
     container.value.appendChild(renderer.domElement);
+    return renderer;
   }
 
   function initScene() {
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xffb57f);
+    const scene = new THREE.Scene();
+    // scene.background = new THREE.Color(0xffffff);
+    return scene;
   }
 
-  function initCamera() {
-    camera = new THREE.PerspectiveCamera(
-      75,
-      window.innerWidth / window.innerHeight,
-      1,
-      1000
-    );
-    camera.position.set(20, 60, -40);
-    camera.lookAt(new THREE.Vector3(0, 0, 0));
-    scene.add(camera);
+  function initCamera(scene, cameras) {
+    // const camera = new THREE.PerspectiveCamera(
+    //   75,
+    //   window.innerWidth / window.innerHeight,
+    //   1,
+    //   1000
+    // );
+    // camera.position.set(20, 60, -40);
+    // camera.lookAt(new THREE.Vector3(0, 0, 0));
+    // scene.add(camera);
+    const camera = cameras[0];
+    return camera;
   }
 
-  function initLight() {
+  function initLight(scene) {
     // 环境光
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    const ambientLight = new THREE.AmbientLight(0xffb57f, 0.5);
     scene.add(ambientLight);
     // 点光
-    const pointLight = new THREE.PointLight(0xffb57f, 1, 100);
-    pointLight.position.set(0, 20, -20);
-    pointLight.castShadow = true;
-    scene.add(pointLight);
+    // const pointLight = new THREE.PointLight(0xffb57f, 1, 100);
+    // pointLight.position.set(0, 20, -20);
+    // pointLight.castShadow = true;
+    // scene.add(pointLight);
 
-    const pointLight1 = new THREE.PointLight(0xffb57f, 1.5, 100);
-    pointLight1.position.set(-20, 20, -20);
-    pointLight1.castShadow = true;
-    scene.add(pointLight1);
+    // const pointLight1 = new THREE.PointLight(0xffb57f, 1.5, 100);
+    // pointLight1.position.set(-20, 20, -20);
+    // pointLight1.castShadow = true;
+    // scene.add(pointLight1);
   }
 
   function initClock() {
-    clock = new THREE.Clock();
+    const clock = new THREE.Clock();
+    return clock;
   }
 
-  function initAxes() {
+  function initAxes(scene) {
     const axes = new THREE.AxesHelper(5);
     scene.add(axes);
   }
 
-  function initControls() {
-    controls = new OrbitControls(camera, renderer.domElement);
+  function initControls(camera, renderer) {
+    const controls = new OrbitControls(camera, renderer.domElement);
     // 阻尼
     controls.enableDamping = true;
-    // controls.maxAzimuthAngle = 1.2 * Math.PI;
-    // controls.minAzimuthAngle = -1.2 * Math.PI;
-    // controls.maxPolarAngle = Math.PI / 3;
-    // controls.minPolarAngle = Math.PI / 5;
+    controls.maxAzimuthAngle = Math.PI / 10;
+    controls.minAzimuthAngle = -Math.PI / 3;
+    controls.maxPolarAngle = Math.PI / 3;
+    controls.minPolarAngle = Math.PI / 5;
+    controls.enableZoom = false;
+    controls.enablePan = false;
+    return controls;
   }
 
-  function initModel() {
-    // 加载模型
+  function initModel(scene) {
+    // 加载器
     const loader = new GLTFLoader();
-    // 解压模型
+    // 压缩模型
     const dracoLoader = new DRACOLoader();
     loader.setDRACOLoader(dracoLoader);
+    // 加载模型
     loader.load(
       url,
-      function (loaderModel) {
-        gltf = loaderModel;
-        gltf.scene.rotation.y = Math.PI;
-        console.log(gltf, 1111);
-        initAnimate();
-        // 初始化场景
+      function (gltf) {
+        console.log("gltf", gltf);
+        scene.add(gltf.scene);
+        // 初始化场景物体
         gltf.scene.traverse(function (child) {
+          child.castShadow = true;
+          child.receiveShadow = true;
           if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
             child.material = new THREE.MeshStandardMaterial({
               color: child.material.color,
             });
-            // child.material.emissive = child.material.color;
-            // child.material.emissiveMap = child.material.map;
           }
-          if (child.isObject3D) {
-            child.castShadow = true;
+          if (child.isLight) {
+            child.intensity = 3;
+            child.distance = 100;
           }
         });
-        scene.add(gltf.scene);
-        // 初始化相机
-        // gltf.cameras.forEach((item) => {
-        //   scene.add(item);
-        // });
-
-        // 动画
+        // 初始化场景相机
+        camera = initCamera(scene, gltf.cameras);
+        // 相机控制器
+        controls = initControls(camera, renderer);
+        // 初始化动画
+        actions = initAnimate(gltf);
+        // 开始动画
         startAnimate();
+        // 事件
+        initEvent(scene, camera, actions);
+        // 屏幕变化
+        initResize(camera, renderer);
       },
       function (xhr) {
         console.log(parseInt((xhr.loaded / xhr.total) * 100) + "% loaded");
@@ -153,7 +151,8 @@ onMounted(() => {
     );
   }
 
-  function initAnimate() {
+  function initAnimate(gltf) {
+    const actions = [];
     mixer = new THREE.AnimationMixer(gltf.scene);
     const action1 = mixer.clipAction(gltf.animations[0]);
     action1.clampWhenFinished = true;
@@ -166,6 +165,7 @@ onMounted(() => {
     action2.loop = THREE.LoopOnce;
     // action2.play();
     actions.push(action2);
+    return actions;
   }
 
   function startAnimate() {
@@ -175,7 +175,7 @@ onMounted(() => {
     requestAnimationFrame(startAnimate);
   }
 
-  function initEvent() {
+  function initEvent(scene, camera, actions) {
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
     window.addEventListener(
