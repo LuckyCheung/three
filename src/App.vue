@@ -8,8 +8,8 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
-import url from "@/assets/untitled1.gltf?url";
 const container = ref(null);
+const url = "https://luckycheung.github.io/three/untitled_mini.glb";
 onMounted(() => {
   let scene = initScene(), // 场景
     // camera = initCamera(scene), // 相机
@@ -111,6 +111,7 @@ onMounted(() => {
     const loader = new GLTFLoader();
     // 压缩模型
     const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath("https://luckycheung.github.io/three/draco_decoder.js")
     loader.setDRACOLoader(dracoLoader);
     // 加载模型
     loader.load(

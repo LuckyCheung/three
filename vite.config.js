@@ -8,7 +8,16 @@ const pathResolve = (dir) => {
 export default defineConfig({
   base: "/three/",
   plugins: [vue()],
-  assetsInclude: ["**/*.glb"],
+  // assetsInclude: ["**/*.glb"],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          three: ["three"],
+        },
+      },
+    },
+  },
   resolve: {
     alias: {
       "@": pathResolve("src"),
