@@ -6,6 +6,7 @@ const pathResolve = (dir) => {
 };
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: "/three/",
   plugins: [vue()],
   assetsInclude: ["**/*.glb"],
   resolve: {
