@@ -1,4 +1,10 @@
 <template>
+  <div class="loading" v-if="!isloadOver">
+    <div v-for="item in loadStatus" :key="item">
+      <span>{{ item.text }}</span>
+      <span v-if="item.isProgress"> 加载中...{{ progress }}%</span>
+    </div>
+  </div>
   <div class="container" ref="container"></div>
 </template>
 <script setup>
@@ -9,6 +15,9 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 const container = ref(null);
+const progress = ref(0);
+const loadStatus = ref([]);
+const isloadOver = ref(false);
 const url = "https://luckycheung.github.io/three/untitled_mini.glb";
 onMounted(() => {
   let scene = initScene(), // 场景
@@ -20,12 +29,52 @@ onMounted(() => {
     mixer,
     actions = [];
 
+  // loading
+  initLoading();
   // 灯光
   initLight(scene);
   // 模型
   initModel(scene);
   // 坐标轴
   initAxes(scene);
+
+  function initLoading() {
+    THREE.DefaultLoadingManager.onStart = function (
+      url,
+      itemsLoaded,
+      itemsTotal
+    ) {
+      loadStatus.value.push({
+        text: `开始加载模型: ${itemsLoaded}/${itemsTotal}`,
+      });
+    };
+
+    THREE.DefaultLoadingManager.onLoad = function () {
+      loadStatus.value.push({
+        text: "加载结束!",
+      });
+      setTimeout(() => {
+        isloadOver.value = true;
+      }, 1000);
+    };
+
+    THREE.DefaultLoadingManager.onProgress = function (
+      loadUrl,
+      itemsLoaded,
+      itemsTotal
+    ) {
+      loadStatus.value.push({
+        text: `加载资源: ${itemsLoaded}/${itemsTotal}`,
+        isProgress: loadUrl === url,
+      });
+    };
+
+    THREE.DefaultLoadingManager.onError = function (url) {
+      loadStatus.value.push({
+        text: `资源加载失败: ${url}`,
+      });
+    };
+  }
 
   function initResize(camera, renderer) {
     window.addEventListener("resize", function () {
@@ -111,7 +160,9 @@ onMounted(() => {
     const loader = new GLTFLoader();
     // 压缩模型
     const dracoLoader = new DRACOLoader();
-    dracoLoader.setDecoderPath("https://luckycheung.github.io/three/draco_decoder.js")
+    dracoLoader.setDecoderPath(
+      "https://luckycheung.github.io/three/draco_decoder.js"
+    );
     loader.setDRACOLoader(dracoLoader);
     // 加载模型
     loader.load(
@@ -147,7 +198,7 @@ onMounted(() => {
         initResize(camera, renderer);
       },
       function (xhr) {
-        console.log(parseInt((xhr.loaded / xhr.total) * 100) + "% loaded");
+        progress.value = parseInt((xhr.loaded / xhr.total) * 100);
       }
     );
   }
@@ -205,5 +256,12 @@ onMounted(() => {
 .container {
   width: 100vw;
   height: 100vh;
+}
+
+.loading {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  font-size: 20px;
 }
 </style>
