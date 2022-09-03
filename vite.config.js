@@ -4,11 +4,9 @@ import vue from "@vitejs/plugin-vue";
 const pathResolve = (dir) => {
   return resolve(__dirname, ".", dir);
 };
-// https://vitejs.dev/config/
 export default defineConfig({
   base: "/three/",
   plugins: [vue()],
-  // assetsInclude: ["**/*.glb"],
   build: {
     rollupOptions: {
       output: {
@@ -17,6 +15,9 @@ export default defineConfig({
         },
       },
     },
+  },
+  server: {
+    open: "/three/",
   },
   resolve: {
     alias: {
